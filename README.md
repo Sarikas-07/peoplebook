@@ -1,157 +1,180 @@
-# PeopleBook
+ # PeopleBook – Diamond Elite Club
 
 *Simple. Secure. Organized.*
 
-## 1. Project overview
+**Live Application:** https://peoplebook-git-branding-diamond-elite-club-sarika-s.vercel.app/login
 
-PeopleBook is a private, admin-only web application for a small business. It keeps track of **People**, the financial **Records** kept for each person, the **Payments** received against those records, **Reports**, and the SMS **Messages** sent to people.
+## 1. Project Overview
 
-- Remaining amount and status are **always calculated** from the actual payments, never typed in or stored.
-- Status is one of **Active**, **Overdue** or **Paid** (Paid when nothing remains; Overdue when the due date has passed and something remains).
-- Amounts are shown in Indian format (₹1,50,000) and dates like `15 Sep 2026`.
-- The application name is changed in one place: `lib/constants.ts`.
+PeopleBook is a private, admin-only web application developed for Diamond Elite Club to securely manage people's information and their financial records in one organized platform.
 
-## 2. Technology stack
+The application is designed around a specific requirement: **only an authorized administrator can access, manage, and maintain the saved records.** It is not a public record-sharing platform, and ordinary visitors cannot access private information or perform administrative operations.
 
-Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, Supabase (PostgreSQL + Auth), Lucide icons, deployed on Vercel. No other frameworks.
+The application helps the administrator manage:
 
-## 3. Installation
+- **People:** Store and manage personal information.
+- **Records:** Maintain financial records associated with each person.
+- **Payments:** Record payments received against individual records.
+- **Reports:** View financial summaries and export filtered reports.
+- **Messages:** Prepare and send SMS notifications and payment confirmations.
+- **Reminders:** Support automated upcoming-due and overdue reminders.
 
-Requirements: Node.js 20.9 or newer, a free Supabase project.
+### Key Features
+
+- Private administrator login with role-based access.
+- Centralized storage of people's information and financial records.
+- Payment tracking with automatically calculated remaining balances.
+- Automatic record status calculation:
+  - **Active:** Payment is pending and the due date has not passed.
+  - **Overdue:** The due date has passed and an amount remains.
+  - **Paid:** No remaining amount is due.
+- SMS payment confirmations and reminder support through MSG91.
+- Search, filtering, reports, and CSV export.
+- Archive functionality to preserve historical records.
+- Responsive web application accessible through a browser.
+
+Remaining amounts and statuses are calculated from actual payments rather than manually entered or stored.
+
+Amounts are displayed in Indian currency format (₹1,50,000), and dates use formats such as `15 Sep 2026`.
+
+The application name and branding are centrally configurable through `lib/constants.ts` and the relevant UI components.
+
+## 2. Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Next.js 16 | Full-stack web application and routing |
+| React 19 | User interface development |
+| TypeScript | Type safety and application logic |
+| Tailwind CSS | Responsive UI styling |
+| Supabase | Backend services and database integration |
+| PostgreSQL | Structured data storage |
+| Supabase Auth | Administrator authentication |
+| Row Level Security (RLS) | Database-level access control |
+| Lucide Icons | UI icons |
+| MSG91 | SMS integration |
+| Vercel | Application hosting and deployment |
+| Git & GitHub | Version control and source management |
+
+## 3. Application Architecture and Workflow
+
+The application follows a client-server-database architecture.
+
+### Application Flow
+
+1. **Administrator Login:** The administrator accesses the application through the login page.
+2. **Authentication:** Supabase Auth verifies the login credentials.
+3. **Role Verification:** The application checks whether the authenticated account has the authorized administrator role.
+4. **Protected Dashboard:** Authorized administrators can access the dashboard and management modules.
+5. **Data Management:** The administrator adds and manages people, financial records, and payments.
+6. **Database Storage:** Data is stored in a PostgreSQL database hosted by Supabase.
+7. **Business Logic:** Remaining balances, payment status, due dates, and reports are calculated using application logic and database rules.
+8. **Communication:** The administrator can use SMS functionality for payment confirmations and reminders.
+9. **Logout:** The administrator can securely end the session.
+
+### Simplified Architecture
+
+```text
+          Administrator
+                 |
+                 v
+          Login Interface
+                 |
+                 v
+          Supabase Auth
+                 |
+                 v
+          Admin Role Check
+                 |
+          +------+------+
+          |             |
+       Authorized    Unauthorized
+          |             |
+          v             v
+       Dashboard     Login / Denied
+          |
+          v
+   People & Records
+          |
+          v
+   Payments & Reports
+          |
+          v
+     Business Logic
+          |
+          v
+   Supabase PostgreSQL
+          |
+          v
+   Secure Data Storage
+
+   SMS Integration: MSG91
+   Hosting: Vercel
+```
+
+## 4. Installation
+
+### Requirements
+
+- Node.js 20.9 or newer.
+- npm.
+- A Supabase project.
+- Git.
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Sarikas-07/peoplebook.git
+cd peoplebook
+```
+
+Install dependencies:
 
 ```bash
 npm install
-cp .env.local.example .env.local   # then fill in the values (section 4)
 ```
 
-## 4. Environment variables
-
-| Variable | Needed for | Notes |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | the app | Supabase → Project Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the app | the *anon* key (safe for browsers) |
-| `SMS_PROVIDER` | SMS | `msg91` |
-| `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_TEMPLATE_ID` | SMS | server-side only |
-| `SMS_TEMPLATE_VARIABLE` | SMS (optional) | default `VAR1` |
-| `SUPABASE_SERVICE_ROLE_KEY` | automatic reminders | server-side only. Never prefix with `NEXT_PUBLIC_` |
-| `CRON_SECRET` | automatic reminders | long random value |
-| `AUTO_REMINDERS_ENABLED` | automatic reminders | only the exact value `true` turns sending on |
-| `REMINDER_UPCOMING_DAYS`, `REMINDER_OVERDUE_REPEAT_DAYS`, `REMINDER_MAX_PER_RUN` | optional | defaults 3, 7, 50 |
-
-The app works with only the first two. Everything else is optional.
-
-## 5. Supabase setup
-
-1. Create a project at supabase.com.
-2. **Authentication → Providers → Email:** turn **off** "Allow new users to sign up".
-3. Copy the project URL and anon key into `.env.local`.
-
-## 6. Database setup
-
-1. Open **SQL Editor**, paste all of `supabase/schema.sql`, and run it. It creates the four tables, relationships, constraints, indexes, the database safety triggers and the access rules. It is safe to run again.
-2. *(Optional, for trying the app)* run `supabase/seed.sql` to add one sample person. Do not run it on your real data.
-
-**Updating an existing database:** re-run `supabase/schema.sql`. It is safe to run again and, for the optional bank details (branch name, branch location, account number), it only adds three empty columns; existing people, records and payments are not touched.
-
-Database rules worth knowing: a payment can never exceed the remaining amount (even if two are saved at once), the amount due cannot be edited below what has been paid, and nothing can be deleted from the app. People are archived, not erased.
-
-## 7. Authentication setup
-
-1. **Authentication → Users → Add user:** create your admin (email and password). Passwords are handled entirely by Supabase.
-2. In the SQL Editor run this once, with your email:
-
-   ```sql
-   update auth.users
-      set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
-    where email = 'YOUR_ADMIN_EMAIL';
-   ```
-3. Sign in at `/login`. If you were already signed in, sign out and in again.
-
-Signed-in accounts **without** the admin role see no data and are turned away at login.
-
-## 8. Local development
+Create a local environment file:
 
 ```bash
-npm run dev      # http://localhost:3000
-npm run lint
-npm test         # unit tests (calculations, templates, SMS, reminders, CSV, search)
-npm run build
+cp .env.local.example .env.local
 ```
 
-**Database tests (optional, needs a scratch PostgreSQL, not Supabase):**
+Configure the environment variables described in Section 5.
+
+Start the development server:
 
 ```bash
-createdb pbtest
-psql -d pbtest -f supabase/tests/auth_stub.sql
-psql -d pbtest -f supabase/schema.sql
-psql -d pbtest -f supabase/tests/rules.test.sql   # prints PASS lines
+npm run dev
 ```
 
-**Manual checklist after setup:**
-1. Sign in → Dashboard shows. 2. Add a person → it appears in People. 3. Open the person → add a record. 4. Open the record → add a ₹5,000 payment; check Amount Paid and Remaining. 5. Pay the rest → status Paid, remaining ₹0. 6. Add a record with a past due date → Overdue. 7. Search by name and by mobile. 8. Edit a person. 9. Archive a person (history stays). 10. Reports → apply filters, Export CSV. 11. Record a payment → "Send Payment Confirmation". 12. Messages → history. 13. Logout. 14. Open `/dashboard` signed out → redirected to `/login`.
+Open `http://localhost:3000` in your browser.
 
-## 9. SMS provider setup
+## 5. Environment Variables
 
-Sending SMS needs a gateway. PeopleBook includes MSG91 (`lib/sms/providers/msg91.ts`); the rest of the app only calls `sendSMS()` in `lib/sms/service.ts`.
+Create a `.env.local` file in the project root.
 
-1. Create an MSG91 account, complete DLT registration, and get your **auth key**, **sender ID** and an approved **Flow template ID**.
-2. Set `SMS_PROVIDER=msg91`, `SMS_API_KEY`, `SMS_SENDER_ID`, `SMS_TEMPLATE_ID`.
-3. The full message text is sent as one template variable (default `VAR1`), so the approved template should consist of that single variable. Confirm with MSG91 that this is accepted for your account; otherwise the provider file needs one template per message type.
-4. Check **Settings** → "SMS service is configured".
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable/anonymous key used by the application |
+| `SMS_PROVIDER` | SMS gateway provider, currently `msg91` |
+| `SMS_API_KEY` | Server-side SMS authentication |
+| `SMS_SENDER_ID` | SMS sender ID |
+| `SMS_TEMPLATE_ID` | Approved SMS template ID |
+| `SMS_TEMPLATE_VARIABLE` | Optional SMS template variable; defaults to `VAR1` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side automatic reminder operations |
+| `CRON_SECRET` | Secret used to protect scheduled reminder requests |
+| `AUTO_REMINDERS_ENABLED` | Enables automatic reminders only when set to `true` |
+| `REMINDER_UPCOMING_DAYS` | Optional upcoming reminder window |
+| `REMINDER_OVERDUE_REPEAT_DAYS` | Optional overdue reminder interval |
+| `REMINDER_MAX_PER_RUN` | Optional maximum messages per scheduled run |
 
-Until this is done the app works normally and shows "SMS service is not configured." Nothing is sent and no fake history is created. To add another gateway, add a file in `lib/sms/providers/` and register it in `lib/sms/provider.ts`.
+The application requires the first two Supabase variables for its core functionality. SMS and automatic reminder variables are optional.
 
-SMS credentials exist only in server-side code (`lib/sms/service.ts` cannot be imported by browser code).
+**Security:** Never commit `.env.local`, passwords, API keys, or service-role credentials to GitHub. Use Vercel Environment Variables for deployment configuration.
 
-## 10. How message templates work
+## 6. Supabase Setup
 
-Templates live in `lib/sms/templates.ts`: Payment Confirmation, Upcoming Due Reminder, Overdue Reminder, and Custom Message (empty). Placeholders: `{person_name}`, `{payment_amount}`, `{total_paid}`, `{remaining_amount}`, `{due_date}`.
-
-On the **Messages** page you choose a person, a type and (for template types) a record. The text is filled in with real figures, and you can edit it before pressing Send. After you record a payment, the record page offers **Send Payment Confirmation**, which opens Messages with that payment's amount filled in. Every real attempt is stored in Message History as Pending, then Sent or Failed.
-
-## 11. How automatic reminders work
-
-A daily job (`vercel.json`, 03:30 UTC = 09:00 IST) calls `/api/cron/reminders`:
-
-1. Finds records due within `REMINDER_UPCOMING_DAYS` days, or overdue, with money still outstanding, for people who are not archived.
-2. Checks Message History to skip duplicates: one upcoming reminder per record; overdue reminders at most every `REMINDER_OVERDUE_REPEAT_DAYS` days; failed attempts retried at most 3 times per period.
-3. Builds the message from the template and saves it as Pending.
-4. Sends it, then marks it Sent (with the provider's ID) or Failed.
-
-Safety: **nothing is sent unless `AUTO_REMINDERS_ENABLED=true`**; otherwise a run only previews. At most `REMINDER_MAX_PER_RUN` messages go out per run. Payment confirmations are never automatic. Settings shows the current state and rules.
-
-## 12. Deployment to Vercel
-
-1. Push the project to a Git repository and import it in Vercel.
-2. Add the environment variables from section 4 (Production).
-3. Deploy. Vercel Cron picks up `vercel.json`. When `CRON_SECRET` is set, Vercel sends it automatically with each cron call.
-4. In Supabase → Authentication → URL Configuration, add your Vercel URL as the Site URL.
-5. Pick a Vercel region near your users (for example Mumbai) in Project Settings → Functions.
-
-## 13. Security notes
-
-- Supabase Auth only; no passwords are stored by the app.
-- Row Level Security on every table; only accounts with the admin role can read or write. Signed-out visitors can do nothing. No delete permission exists.
-- Protected routes redirect to `/login`; every server action re-checks the signed-in admin and validates its input on the server.
-- Aadhaar is masked everywhere (`XXXX XXXX 1234`), never selected in lists, reports or messages, never put in a URL, never logged, never sent back to the form.
-- The service-role key and SMS credentials are used only in server-only files; the build fails if browser code imports them.
-- Account numbers are stored as text (leading zeros kept), validated as 9–18 digits, shown masked (`XXXXXX1234`), and never selected in lists, reports or messages. The full number is fetched only when the eye icon is pressed, and hides again after 30 seconds. Like Aadhaar, it is stored as plain text in the database (see Known limitations).
-- The mobile number for an SMS always comes from the database, not the browser. CSV exports neutralise spreadsheet formulas.
-- Security headers (no framing, no content sniffing, HSTS, strict referrer policy) are set in `next.config.ts`.
-- Keep sign-ups **off** and keep `.env.local` out of version control (already ignored).
-
-## 14. Known limitations
-
-- Aadhaar and account numbers are stored as plain text in the database (disk-encrypted by Supabase, but not column-encrypted).
-- The Records, Payments and People lists have no pagination; Message History shows the latest 100.
-- Message templates are edited in code, not on the Settings screen.
-- Sign-in attempt limiting relies on Supabase's built-in protection.
-- Search terms (a name or mobile number) appear in the page address.
-- Overlapping scheduled runs could, very rarely, send the same reminder twice.
-- Multi-record people show their most urgent status in the People list.
-- One administrator role only; no staff accounts.
-- MSG91 delivery has not been tested against a live account (see section 9).
-
-## 15. Phase 2 ideas
-
-PDF and Excel reports, charts, WhatsApp and email, editable templates stored in the database, staff users with roles, document uploads (Supabase Storage), audit log, notifications, column-level encryption for Aadhaar, pagination and filters on large lists, configurable reminder timing in Settings.
+1. Create a project at [Supabase](https://supabase.com/).
+2. Open Project Settings → API.
